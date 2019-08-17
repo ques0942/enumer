@@ -20,13 +20,14 @@ import (
 	"go/importer"
 	"go/token"
 	"go/types"
-	"golang.org/x/tools/go/packages"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"golang.org/x/tools/go/packages"
 
 	"github.com/pascaldekloe/name"
 )
@@ -310,18 +311,30 @@ func (pkg *Package) check(fs *token.FileSet, astFiles []*ast.File) {
 }
 
 func (g *Generator) transformValueNames(values []Value, transformMethod string) {
-	var sep rune
+	var f func(Value) string
 	switch transformMethod {
 	case "snake":
-		sep = '_'
+		f = func(value Value) string {
+			return strings.ToLower(name.Delimit(value.name, '-'))
+		}
 	case "kebab":
-		sep = '-'
+		f = func(value Value) string {
+			return strings.ToLower(name.Delimit(value.name, '_'))
+		}
+	case "comment":
+		f = func(value Value) string {
+			if value.comment != "" {
+				return value.comment
+			} else {
+				return value.name
+			}
+		}
 	default:
 		return
 	}
 
 	for i := range values {
-		values[i].name = strings.ToLower(name.Delimit(values[i].name, sep))
+		values[i].name = f(values[i])
 	}
 }
 
